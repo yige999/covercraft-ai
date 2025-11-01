@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Cover Letter Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col items-center p-4">
+
+  <div class="max-w-lg w-full bg-white shadow-lg rounded-lg p-6 mt-10">
+    <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">AI Cover Letter Generator</h1>
+
+    <!-- OpenAI Key -->
+    <div class="mb-4">
+      <label class="block font-semibold mb-1 text-gray-700">OpenAI API Key</label>
+      <input id="apiKey" type="password" placeholder="sk-..." 
+        class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300 outline-none">
+      <p class="text-xs text-gray-500 mt-1">🔒 Your key is stored locally (never uploaded)</p>
+    </div>
+
+    <!-- Job Description -->
+    <div class="mb-4">
+      <label class="block font-semibold mb-1 text-gray-700">Job Description</label>
+      <textarea id="jobDesc" rows="3" placeholder="Enter the job description..." 
+        class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300 outline-none"></textarea>
+    </div>
+
+    <!-- Experience -->
+    <div class="mb-4">
+      <label class="block font-semibold mb-1 text-gray-700">Your Experience</label>
+      <textarea id="experience" rows="3" placeholder="Describe your background and skills..." 
+        class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300 outline-none"></textarea>
+    </div>
+
+    <!-- Buttons -->
+    <button id="generateBtn" 
+      class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 font-semibold transition">✨ Generate Cover Letter</button>
+
+    <div id="outputSection" class="hidden mt-6">
+      <h2 class="text-lg font-bold mb-2 text-gray-700">Your Cover Letter</h2>
+      <div id="output" class="border rounded-lg p-3 bg-gray-50 min-h-[150px] whitespace-pre-wrap text-gray-800"></div>
+
+      <div class="flex gap-2 mt-4">
+        <button id="copyBtn" class="flex-1 bg-gray-700 text-white py-2 rounded-lg hover:bg-gray-800">📋 Copy</button>
+        <button id="printBtn" class="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">🖨️ Print</button>
+      </div>
+    </div>
+
+    <p id="status" class="text-center text-sm mt-4 text-gray-500"></p>
+  </div>
+
+  <script>
+    // ==== Local Storage Setup ====
+    const apiKeyInput = document.getElementById('apiKey');
+    const savedKey = localStorage.getItem('openai_key');
+    if (savedKey) apiKeyInput.value = savedKey;
+    apiKeyInput.addEventListener('input', () => {
+      localStorage.setItem('openai_key', apiKeyInput.value.trim());
+    });
+
+    // ==== Daily Limit ====
+    const today = new Date().toISOString().slice(0, 10);
+    const usedDate = localStorage.getItem('used_date');
+    const generateBtn = document.getElementById('generateBtn');
+    const status = document.getElementById('status');
+    if (usedDate === today) {
+      generateBtn.disabled = true;
+      generateBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+      status.textContent = "⚠️ Free version: You can only generate once per day.";
+    }
+
+    // ==== Generate Letter ====
+    generateBtn.addEventListener('click', async () => {
+      const apiKey = apiKeyInput.value.trim();
+      const jobDesc = document.getElementById('jobDesc').value.trim();
+      const experience = document.getElementById('experience').value.trim();
+      const outputDiv = document.getElementById('output');
+      const outputSection = document.getElementById('outputSection');
+
+      if (!apiKey) return alert("Please enter your OpenAI API Key.");
+      if (!jobDesc || !experience) return alert("Please fill in all fields.");
+
+      generateBtn.disabled = true;
+      generateBtn.textContent = "⏳ Generating...";
+      status.textContent = "";
+
+      try {
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [{
+              role: "user",
+              content: `Write a professional and personalized cover letter for this job:\n\nJob Description:\n${jobDesc}\n\nExperience:\n${experience}`
+            }],
+            temperature: 0.8
+          })
+        });
+
+        const data = await res.json();
+        const text = data.choices?.[0]?.message?.content || "Error: No response from OpenAI.";
+        outputDiv.textContent = text;
+        outputSection.classList.remove('hidden');
+
+        localStorage.setItem('used_date', today);
+        status.textContent = "✅ Generated successfully. Come back tomorrow for another letter.";
+      } catch (err) {
+        alert("Error: " + err.message);
+      } finally {
+        generateBtn.disabled = true;
+        generateBtn.textContent = "✨ Generate Cover Letter";
+        generateBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+      }
+    });
+
+    // ==== Copy ====
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      const text = document.getElementById('output').textContent;
+      await navigator.clipboard.writeText(text);
+      alert("Copied to clipboard!");
+    });
+
+    // ==== Print ====
+    document.getElementById('printBtn').addEventListener('click', () => {
+      window.print();
+    });
+  </script>
+</body>
+</html>

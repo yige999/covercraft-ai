@@ -1,0 +1,8 @@
+{
+  "name": "AI Cover Letter",
+  "short_name": "CoverLetter",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "description": "Generate tailored cover letters using your own OpenAI key (client-side)."
+}

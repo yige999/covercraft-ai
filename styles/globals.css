@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* small printable view tweak */
+@media print {
+  html, body {
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+}
